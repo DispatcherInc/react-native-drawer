@@ -1,5 +1,5 @@
 var React = require('react-native')
-var { PanResponder, View, StyleSheet, Dimensions } = React
+var { PanResponder, View, StyleSheet, Dimensions, TouchableWithoutFeedback, Animated } = React
 var deviceScreen = Dimensions.get('window')
 var tween = require('./Tweener')
 
@@ -15,6 +15,7 @@ var drawer = React.createClass({
   _lastPress: 0,
   _panStartTime: 0,
   _syncAfterUpdate: false,
+  _closeOverlayOpacity: new Animated.Value(0),
 
   propTypes: {
     type: React.PropTypes.string,
@@ -201,6 +202,10 @@ var drawer = React.createClass({
     this.initialize(this.props)
   },
 
+  componentDidMount() {
+    this.setState({isOpen: false});
+  },
+
   componentDidUpdate () {
     if(this._syncAfterUpdate){
       this._syncAfterUpdate = false
@@ -314,6 +319,7 @@ var drawer = React.createClass({
   },
 
   open () {
+    this.setState({isOpen: true});
     tween({
       start: this._left,
       end: this.getOpenLeft(),
@@ -322,13 +328,22 @@ var drawer = React.createClass({
       onFrame: (tweenValue) => {
         this._left = tweenValue
         this.updatePosition()
+
       },
       onEnd: () => {
         this._open = true
         this._prevLeft = this._left
         this.props.onOpen()
+
       }
-    })
+    });
+    Animated.timing(
+      this._closeOverlayOpacity,
+      {
+        toValue: 0.5,
+        duration: this.props.tweenDuration
+      }
+    ).start();
   },
 
   close () {
@@ -345,8 +360,16 @@ var drawer = React.createClass({
         this._open = false
         this._prevLeft = this._left
         this.props.onClose()
+        this.setState({isOpen: false})
       }
-    })
+    });
+    Animated.timing(
+      this._closeOverlayOpacity,
+      {
+        toValue: 0,
+        duration: this.props.tweenDuration
+      }
+    ).start();
   },
 
   toggle () {
@@ -375,6 +398,20 @@ var drawer = React.createClass({
     this._panning = false
   },
 
+  getCloseOverlayView() {
+    if(!this.state.isOpen) {
+      return null;
+    }
+
+    return (
+      <View style={{position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'transparent'}}>
+        <TouchableWithoutFeedback onPress={this.toggle}>
+          <Animated.View style={{flex: 1, backgroundColor: 'black', opacity: this._closeOverlayOpacity}}/>
+        </TouchableWithoutFeedback>
+      </View>
+    );
+  },
+
   getMainView () {
     return (
       <View
@@ -383,6 +420,7 @@ var drawer = React.createClass({
         ref="main"
         {...this.responder.panHandlers}>
         {this.props.children}
+        {this.getCloseOverlayView()}
       </View>
     )
   },
