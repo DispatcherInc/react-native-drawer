@@ -1,5 +1,6 @@
 var React = require('react-native')
 var { PanResponder, View, StyleSheet, Dimensions, TouchableWithoutFeedback, Animated } = React
+var dismissKeyboard = require('react-native/Libraries/Utilities/dismissKeyboard');
 var deviceScreen = Dimensions.get('window')
 var tween = require('./Tweener')
 
@@ -73,20 +74,20 @@ var drawer = React.createClass({
     tweenPresets: {
       parallax: (ratio, side = 'left') => {
         var drawer = {}
-        drawer[side] = -150*(1-ratio)
-        return { drawer: drawer }
+        drawer[side] = -150 * (1 - ratio)
+        return {drawer: drawer}
       }
     }
   },
 
   getInitialState () {
-    return { viewport: deviceScreen }
+    return {viewport: deviceScreen}
   },
 
   setViewport (e) {
     var viewport = e.nativeEvent.layout
     var oldViewport = this.state.viewport
-    if(viewport.width === oldViewport.width && viewport.height === oldViewport.height){
+    if (viewport.width === oldViewport.width && viewport.height === oldViewport.height) {
       return
     }
     this.resync(viewport)
@@ -96,9 +97,11 @@ var drawer = React.createClass({
     var viewport = viewport || this.state.viewport
     var props = props || this.props
     this._syncAfterUpdate = true
-    this._offsetClosed = props.closedDrawerOffset%1 === 0 ? props.closedDrawerOffset : props.closedDrawerOffset * viewport.width
-    this._offsetOpen = props.openDrawerOffset%1 === 0 ? props.openDrawerOffset : props.openDrawerOffset * viewport.width
-    this.setState({ viewport: viewport })
+    this._offsetClosed =
+      props.closedDrawerOffset % 1 === 0 ? props.closedDrawerOffset : props.closedDrawerOffset * viewport.width
+    this._offsetOpen =
+      props.openDrawerOffset % 1 === 0 ? props.openDrawerOffset : props.openDrawerOffset * viewport.width
+    this.setState({viewport: viewport})
   },
 
   propsWhomRequireUpdate: [
@@ -110,20 +113,21 @@ var drawer = React.createClass({
   requiresResync (nextProps) {
     for (var i = 0; i < this.propsWhomRequireUpdate.length; i++) {
       var key = this.propsWhomRequireUpdate[i]
-      if(this.props[key] !== nextProps[key]){ return true }
+      if (this.props[key] !== nextProps[key]) { return true }
     }
   },
 
   componentWillReceiveProps (nextProps) {
-    if(this.requiresResync(nextProps)){
+    if (this.requiresResync(nextProps)) {
       this.resync(null, nextProps)
     }
   },
 
   initialize (props) {
     var fullWidth = this.state.viewport.width
-    this._offsetClosed = props.closedDrawerOffset%1 === 0 ? props.closedDrawerOffset : props.closedDrawerOffset*fullWidth
-    this._offsetOpen = props.openDrawerOffset%1 === 0 ? props.openDrawerOffset : props.openDrawerOffset*fullWidth
+    this._offsetClosed =
+      props.closedDrawerOffset % 1 === 0 ? props.closedDrawerOffset : props.closedDrawerOffset * fullWidth
+    this._offsetOpen = props.openDrawerOffset % 1 === 0 ? props.openDrawerOffset : props.openDrawerOffset * fullWidth
 
     var styles = {
       container: {
@@ -133,58 +137,58 @@ var drawer = React.createClass({
       },
     }
     styles.main = Object.assign({
-        position: 'absolute',
-        top: 0,
-        height: this.state.viewport.height,
-      }, {borderWidth:0}, this.props.styles.main)
+      position: 'absolute',
+      top: 0,
+      height: this.state.viewport.height,
+    }, {borderWidth: 0}, this.props.styles.main)
     styles.drawer = Object.assign({
-        position: 'absolute',
-        top: 0,
-        height: this.state.viewport.height,
-      }, {borderWidth:0}, this.props.styles.drawer)
+      position: 'absolute',
+      top: 0,
+      height: this.state.viewport.height,
+    }, {borderWidth: 0}, this.props.styles.drawer)
 
     //open
-    if(props.initializeOpen === true){
+    if (props.initializeOpen === true) {
       this._open = true
       this._left = fullWidth - this._offsetOpen
       this._prevLeft = this._left
-      if(props.type === 'static'){
+      if (props.type === 'static') {
         styles.main[this.props.side] = fullWidth - this._offsetOpen
         styles.drawer[this.props.side] = 0
       }
-      if(props.type === 'overlay'){
+      if (props.type === 'overlay') {
         styles.main[this.props.side] = 0
         styles.drawer[this.props.side] = 0
       }
-      if(props.type === 'displace'){
+      if (props.type === 'displace') {
         styles.main[this.props.side] = fullWidth - this._offsetOpen
         styles.drawer[this.props.side] = 0
       }
     }
     //closed
-    else{
+    else {
       this._open = false
       this._left = this._offsetClosed
       this._prevLeft = this._left
-      if(props.type === 'static'){
+      if (props.type === 'static') {
         styles.main[this.props.side] = this._offsetClosed
         styles.drawer[this.props.side] = 0
       }
-      if(props.type === 'overlay'){
+      if (props.type === 'overlay') {
         styles.main[this.props.side] = this._offsetClosed
         styles.drawer[this.props.side] = this._offsetClosed + this._offsetOpen - fullWidth
       }
-      if(props.type === 'displace'){
+      if (props.type === 'displace') {
         styles.main[this.props.side] = this._offsetClosed
-        styles.drawer[this.props.side] = - fullWidth + this._offsetClosed + this._offsetOpen
+        styles.drawer[this.props.side] = -fullWidth + this._offsetClosed + this._offsetOpen
       }
     }
 
-    if(this.refs.main){
-      this.refs.drawer.setNativeProps({ style: {left: styles.drawer.left}})
-      this.refs.main.setNativeProps({ style: {left: styles.main.left}})
+    if (this.refs.main) {
+      this.refs.drawer.setNativeProps({style: {left: styles.drawer.left}})
+      this.refs.main.setNativeProps({style: {left: styles.main.left}})
     }
-    else{
+    else {
       this.stylesheet = StyleSheet.create(styles)
 
       this.responder = PanResponder.create({
@@ -207,7 +211,7 @@ var drawer = React.createClass({
   },
 
   componentDidUpdate () {
-    if(this._syncAfterUpdate){
+    if (this._syncAfterUpdate) {
       this._syncAfterUpdate = false
       this._open ? this.open() : this.close()
     }
@@ -217,11 +221,11 @@ var drawer = React.createClass({
     var mainProps = {}
     var drawerProps = {}
 
-    var ratio = (this._left-this._offsetClosed)/(this.getOpenLeft()-this._offsetClosed)
+    var ratio = (this._left - this._offsetClosed) / (this.getOpenLeft() - this._offsetClosed)
 
-    switch(this.props.type){
+    switch (this.props.type) {
       case 'overlay':
-        drawerProps[this.props.side] = -this.state.viewport.width+this._offsetOpen+this._left
+        drawerProps[this.props.side] = -this.state.viewport.width + this._offsetOpen + this._left
         mainProps[this.props.side] = this._offsetClosed
         break
       case 'static':
@@ -230,11 +234,11 @@ var drawer = React.createClass({
         break
       case 'displace':
         mainProps[this.props.side] = this._left
-        drawerProps[this.props.side] = -this.state.viewport.width+this._left+this._offsetOpen
+        drawerProps[this.props.side] = -this.state.viewport.width + this._left + this._offsetOpen
         break
     }
 
-    if(this.props.tweenHandler){
+    if (this.props.tweenHandler) {
       var propsFrag = this.props.tweenHandler(ratio, this.props.side)
       mainProps = Object.assign(mainProps, propsFrag.main)
       drawerProps = Object.assign(drawerProps, propsFrag.drawer)
@@ -244,23 +248,23 @@ var drawer = React.createClass({
   },
 
   shouldOpenDrawer (dx) {
-    if(this._open){
-      return dx < this.state.viewport.width*this.props.openDrawerThreshold
+    if (this._open) {
+      return dx < this.state.viewport.width * this.props.openDrawerThreshold
     }
-    else{
-      return dx > this.state.viewport.width*this.props.openDrawerThreshold
+    else {
+      return dx > this.state.viewport.width * this.props.openDrawerThreshold
     }
   },
 
   handleStartShouldSetPanResponderCapture (e, gestureState) {
-    if(this.props.captureGestures){
+    if (this.props.captureGestures) {
       return this.handleStartShouldSetPanResponder(e, gestureState)
     }
   },
 
   handleStartShouldSetPanResponder (e, gestureState) {
     this._panStartTime = Date.now()
-    if(!this.testPanResponderMask(e, gestureState)){
+    if (!this.testPanResponderMask(e, gestureState)) {
       return false
     }
     return true
@@ -271,7 +275,7 @@ var drawer = React.createClass({
     if (this.props.tapToClose && this._open) this.close()
     if (this.props.acceptDoubleTap) {
       var now = new Date().getTime()
-      if(now - this._lastPress < 500){
+      if (now - this._lastPress < 500) {
         this._open ? this.close() : this.open()
       }
       this._lastPress = now
@@ -279,19 +283,19 @@ var drawer = React.createClass({
   },
 
   testPanResponderMask (e, gestureState) {
-    if(this.props.disabled){ return false }
+    if (this.props.disabled) { return false }
     var x0 = e.nativeEvent.pageX
 
     var deltaOpen = this.props.side === 'left' ? deviceScreen.width - x0 : x0
     var deltaClose = this.props.side === 'left' ? x0 : deviceScreen.width - x0
 
-    if( this._open && deltaOpen > deviceScreen.width*this.props.panCloseMask ) return false
-    if( !this._open && deltaClose > deviceScreen.width*this.props.panOpenMask ) return false
+    if (this._open && deltaOpen > deviceScreen.width * this.props.panCloseMask) return false
+    if (!this._open && deltaClose > deviceScreen.width * this.props.panOpenMask) return false
     return true
   },
 
   handlePanResponderMove (e, gestureState) {
-    if(!this.props.acceptPan){
+    if (!this.props.acceptPan) {
       return false
     }
 
@@ -300,7 +304,7 @@ var drawer = React.createClass({
     //@TODO store adjustedDx max so that it does not uncompensate when panning back
     var dx = gestureState.dx
     //Do nothing if we are panning the wrong way
-    if(this._open ^ dx < 0 ^ this.props.side === 'right'){ return false }
+    if (this._open ^ dx < 0 ^ this.props.side === 'right') { return false }
 
     var absDx = Math.abs(dx)
     var moveX = gestureState.moveX
@@ -308,8 +312,8 @@ var drawer = React.createClass({
       ? this._open ? -this.state.viewport.width + moveX : moveX
       : this._open ? -moveX : this.state.viewport.width - moveX
     var delta = relMoveX - dx
-    var factor = absDx/Math.abs(relMoveX)
-    var adjustedDx = dx + delta*factor
+    var factor = absDx / Math.abs(relMoveX)
+    var adjustedDx = dx + delta * factor
     var left = this.props.panStartCompensation ? this._prevLeft + adjustedDx : this._prevLeft + dx
     left = Math.min(left, this.getOpenLeft())
     left = Math.max(left, this.getClosedLeft())
@@ -347,6 +351,7 @@ var drawer = React.createClass({
   },
 
   close () {
+    dismissKeyboard()
     tween({
       start: this._left,
       end: this.getClosedLeft(),
@@ -381,7 +386,7 @@ var drawer = React.createClass({
     if (Date.now() - this._panStartTime < 250) this.processTapGestures()
 
     // Do nothing if we are not in an active pan state
-    if(!this._panning){ return }
+    if (!this._panning) { return }
 
     var absRelMoveX = this.props.side === 'left'
       ? this._open ? this.state.viewport.width - gestureState.moveX : gestureState.moveX
@@ -399,7 +404,7 @@ var drawer = React.createClass({
   },
 
   getCloseOverlayView() {
-    if(!this.state.isOpen) {
+    if (!this.state.isOpen) {
       return null;
     }
 
@@ -442,7 +447,7 @@ var drawer = React.createClass({
   },
 
   render () {
-    switch(this.props.type){
+    switch (this.props.type) {
       case 'overlay':
         var first = this.getMainView()
         var second = this.getDrawerView()
